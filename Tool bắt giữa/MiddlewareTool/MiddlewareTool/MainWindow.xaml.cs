@@ -26,12 +26,14 @@ namespace MiddlewareTool
         private bool _isSessionRunning = false;
 
         public ObservableCollection<LoggedRequest> LoggedRequests { get; set; }
+
         public MainWindow()
         {
             InitializeComponent();
             LoggedRequests = new ObservableCollection<LoggedRequest>();
             RequestsGrid.ItemsSource = LoggedRequests;
         }
+
         private void BrowseServer_Click(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new OpenFileDialog { Filter = "Executable files (*.exe)|*.exe" };
@@ -60,9 +62,11 @@ namespace MiddlewareTool
             {
                 if (string.IsNullOrEmpty(ServerExePath.Text) || string.IsNullOrEmpty(ClientExePath.Text))
                 {
-                    MessageBox.Show("Please select both server and client executable files.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Please select both server and client executable files.", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
+
                 await StartSessionAsync();
             }
         }
@@ -113,8 +117,21 @@ namespace MiddlewareTool
             _proxyListener?.Stop();
 
             // Đóng các process
-            try { if (_clientProcess != null && !_clientProcess.HasExited) _clientProcess.Kill(); } catch { }
-            try { if (_serverProcess != null && !_serverProcess.HasExited) _serverProcess.Kill(); } catch { }
+            try
+            {
+                if (_clientProcess != null && !_clientProcess.HasExited) _clientProcess.Kill();
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                if (_serverProcess != null && !_serverProcess.HasExited) _serverProcess.Kill();
+            }
+            catch
+            {
+            }
 
             _isSessionRunning = false;
             StartStopButton.Content = "Start Grading Session";
@@ -161,9 +178,16 @@ namespace MiddlewareTool
                 {
                     var forwardRequest = new HttpRequestMessage(new HttpMethod(request.HttpMethod), realServerUrl);
 
+                    MediaTypeHeaderValue? contentType = null;
+
+                    if (request.ContentType != null)
+                    {
+                        contentType = MediaTypeHeaderValue.Parse(request.ContentType);
+                    }
+
                     // Copy body
                     forwardRequest.Content =
-                        new StringContent(logEntry.RequestBody, MediaTypeHeaderValue.Parse(request.ContentType));
+                        new StringContent(logEntry.RequestBody, contentType);
 
                     // Gửi request và nhận response
                     var responseMessage = await client.SendAsync(forwardRequest);
@@ -191,10 +215,11 @@ namespace MiddlewareTool
             }
 
             // Cập nhật UI từ thread chính
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                LoggedRequests.Add(logEntry);
-            });
+            Application.Current.Dispatcher.Invoke(() => { LoggedRequests.Add(logEntry); });
+        }
+
+        private void ViewButton_Click(object sender, RoutedEventArgs e)
+        {
         }
     }
 }
